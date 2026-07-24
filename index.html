@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subway Cyber-Runner - 3D Endless Runner</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Style -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="overlay active">
+            <div class="neon-card">
+                <h1 class="logo text-glitch">SUBWAY<br><span class="highlight">CYBER-RUNNER</span></h1>
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                </div>
+                <p class="loading-status">INITIALIZING WEBGL CORE...</p>
+            </div>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="overlay">
+            <div class="menu-header">
+                <button id="btn-settings" class="btn-icon"><i class="fas fa-cog"></i></button>
+                <div class="header-stats">
+                    <div class="stats-pill">
+                        <i class="fas fa-trophy yellow"></i>
+                        <span id="menu-high-score">0</span>
+                    </div>
+                    <div class="stats-pill">
+                        <i class="fas fa-coins gold"></i>
+                        <span id="menu-coins">0</span>
+                    </div>
+                    <div class="stats-pill">
+                        <i class="fas fa-dna cyan"></i>
+                        <span>LVL <span id="menu-player-level">1</span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-content">
+                <h1 class="logo text-glow">SUBWAY<br><span class="highlight">CYBER-RUNNER</span></h1>
+                
+                <!-- Active Missions Panel -->
+                <div class="menu-missions-container">
+                    <h3><i class="fas fa-award yellow"></i> ACTIVE CHALLENGES</h3>
+                    <div id="missions-list" class="missions-list">
+                        <!-- Dynamic Missions inserted here -->
+                    </div>
+                </div>
+
+                <button id="btn-play" class="btn btn-primary btn-glow">
+                    <i class="fas fa-play"></i> START RUN
+                </button>
+                
+                <div class="menu-actions">
+                    <button id="btn-characters" class="btn btn-secondary">
+                        <i class="fas fa-user-astronaut"></i> RUNNERS
+                    </button>
+                    <button id="btn-shop" class="btn btn-secondary">
+                        <i class="fas fa-shopping-cart"></i> TECH DECK
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-footer">
+                <p class="controls-hint"><i class="fas fa-keyboard"></i> Use WASD / Arrows to SURF, JUMP & ROLL. SPACE for HOVERBOARD.</p>
+            </div>
+        </div>
+
+        <!-- Settings Menu -->
+        <div id="settings-menu" class="overlay">
+            <div class="neon-card menu-panel settings-panel">
+                <div class="panel-header">
+                    <button id="btn-back-settings" class="btn-icon"><i class="fas fa-chevron-left"></i></button>
+                    <h2>SYSTEM SETTINGS</h2>
+                </div>
+
+                <div class="settings-list">
+                    <!-- Music Volume -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-music cyan"></i> MUSIC VOLUME</span>
+                            <span id="label-music" class="setting-value">80%</span>
+                        </div>
+                        <input type="range" id="slider-music" min="0" max="100" value="80" class="neon-slider">
+                    </div>
+                    
+                    <!-- SFX Volume -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-volume-up pink"></i> SFX VOLUME</span>
+                            <span id="label-sfx" class="setting-value">80%</span>
+                        </div>
+                        <input type="range" id="slider-sfx" min="0" max="100" value="80" class="neon-slider">
+                    </div>
+
+                    <!-- Custom BGM Loader -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-file-audio orange"></i> CUSTOM BGM (.MP3)</span>
+                            <span id="label-custom-bgm" class="setting-value">BUILT-IN SYNTH</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 5px;">
+                            <input type="file" id="input-custom-bgm" accept="audio/*" style="display: none;">
+                            <button class="btn btn-secondary" onclick="document.getElementById('input-custom-bgm').click()" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; width: 100%;">
+                                <i class="fas fa-upload"></i> LOAD LOCAL MP3
+                            </button>
+                            <button id="btn-clear-custom-bgm" class="btn btn-secondary btn-red" style="padding: 8px 12px; font-size: 0.8rem; margin: 0; display: none;">
+                                <i class="fas fa-times"></i> RESET
+                            </button>
+                        </div>
+                        <audio id="custom-bgm-player" loop style="display: none;"></audio>
+                    </div>
+
+
+                    <!-- Graphics Quality -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-desktop cyan"></i> GRAPHICS QUALITY</span>
+                            <span id="label-graphics" class="setting-value">HIGH</span>
+                        </div>
+                        <select id="select-graphics" class="neon-select-input">
+                            <option value="high">HIGH (SHADOWS & LIGHTING)</option>
+                            <option value="medium">MEDIUM (SHADOWS OFF)</option>
+                            <option value="low">LOW (PERFORMANCE MODE)</option>
+                        </select>
+                    </div>
+
+                    <!-- Difficulty Mode -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-tachometer-alt orange"></i> RUNNER MODE</span>
+                            <span id="label-difficulty" class="setting-value">NORMAL</span>
+                        </div>
+                        <select id="select-difficulty" class="neon-select-input">
+                            <option value="normal">NORMAL MODE</option>
+                            <option value="hardcore">HARDCORE SPEED (2X MULTI)</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset Data -->
+                    <div class="setting-item" style="margin-top: 15px;">
+                        <div class="setting-info">
+                            <span class="setting-name"><i class="fas fa-radiation red-text"></i> DANGER ZONE</span>
+                        </div>
+                        <button id="btn-reset-data" class="btn btn-secondary btn-red" style="width: 100%; font-size: 0.8rem; padding: 10px 16px; margin: 5px 0 0 0;">
+                            <i class="fas fa-trash-alt"></i> WIPE SAVE DATA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Select Menu -->
+        <div id="character-select-menu" class="overlay">
+            <div class="neon-card menu-panel">
+                <div class="panel-header">
+                    <button id="btn-back-chars" class="btn-icon"><i class="fas fa-chevron-left"></i></button>
+                    <h2>CHOOSE YOUR RUNNER</h2>
+                    <div class="stats-pill">
+                        <i class="fas fa-coins gold"></i>
+                        <span id="char-coins-display">0</span>
+                    </div>
+                    <div class="stats-pill">
+                        <i class="fas fa-dna cyan"></i>
+                        <span>LVL <span id="char-level-display">1</span></span>
+                    </div>
+                </div>
+
+                <div class="character-grid" id="character-grid">
+                    <!-- Dynamic Character Cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Menu -->
+        <div id="shop-menu" class="overlay">
+            <div class="neon-card menu-panel">
+                <div class="panel-header">
+                    <button id="btn-back-shop" class="btn-icon"><i class="fas fa-chevron-left"></i></button>
+                    <h2>CYBER UPGRADES</h2>
+                    <div class="stats-pill">
+                        <i class="fas fa-coins gold"></i>
+                        <span id="shop-coins-display">0</span>
+                    </div>
+                </div>
+
+                <div class="shop-grid" id="shop-grid">
+                    <!-- Dynamic Shop Items will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- In-game HUD -->
+        <div id="hud">
+            <div class="hud-top">
+                <div class="hud-stats">
+                    <div class="hud-pill score-container">
+                        <span class="hud-label">SCORE</span>
+                        <span id="hud-score" class="hud-value">000000</span>
+                        <span id="hud-multiplier" class="hud-sub">x1</span>
+                    </div>
+                    <div class="hud-pill coins-container">
+                        <span class="hud-label"><i class="fas fa-coins gold"></i></span>
+                        <span id="hud-coins" class="hud-value">0</span>
+                    </div>
+                    <div class="hud-pill boxes-container">
+                        <span class="hud-label"><i class="fas fa-box pink"></i></span>
+                        <span id="hud-boxes" class="hud-value">0</span>
+                    </div>
+                </div>
+                <div class="hud-right-actions">
+                    <div class="hud-board-status" id="hud-board-status">
+                        <div class="board-indicator ready" id="board-indicator">
+                            <i class="fas fa-skateboard"></i>
+                            <span id="board-count">0</span>
+                        </div>
+                    </div>
+                    <button id="btn-pause-toggle" class="btn-icon"><i class="fas fa-pause"></i></button>
+                </div>
+            </div>
+
+            <!-- Delhi Metro Station Indicator -->
+            <div id="hud-station-indicator" class="hud-station-toast" style="display: none;">
+                <i class="fas fa-subway"></i> STATION: RAJIV CHOWK
+            </div>
+
+            <!-- Active Power-up Progress Bars -->
+            <div class="hud-powerups" id="hud-powerups">
+                <div class="powerup-bar-container" id="bar-jetpack" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-rocket cyan"></i> JETPACK</span>
+                        <span id="text-jetpack">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill cyan-bg" id="fill-jetpack"></div>
+                    </div>
+                </div>
+
+                <div class="powerup-bar-container" id="bar-magnet" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-magnet pink"></i> COIN MAGNET</span>
+                        <span id="text-magnet">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill pink-bg" id="fill-magnet"></div>
+                    </div>
+                </div>
+
+                <div class="powerup-bar-container" id="bar-multiplier" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-bolt orange"></i> 2X MULTIPLIER</span>
+                        <span id="text-multiplier">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill orange-bg" id="fill-multiplier"></div>
+                    </div>
+                </div>
+
+                <div class="powerup-bar-container" id="bar-sneakers" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-shoe-prints green"></i> SUPER SNEAKERS</span>
+                        <span id="text-sneakers">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill green-bg" id="fill-sneakers"></div>
+                    </div>
+                </div>
+
+                <div class="powerup-bar-container" id="bar-shield" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-shield-alt blue"></i> ENERGY SHIELD</span>
+                        <span id="text-shield">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill blue-bg" id="fill-shield"></div>
+                    </div>
+                </div>
+
+                <div class="powerup-bar-container" id="bar-reflexes" style="display: none;">
+                    <div class="powerup-info">
+                        <span><i class="fas fa-clock purple"></i> CYBER REFLEXES</span>
+                        <span id="text-reflexes">10s</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill purple-bg" id="fill-reflexes"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="overlay">
+            <div class="neon-card menu-panel pause-panel">
+                <h1 class="logo text-glow cyan">RUN PAUSED</h1>
+                <p class="subtitle">CYBER-RUN SUSPENDED. READY TO RESUME?</p>
+                
+                <button id="btn-resume" class="btn btn-primary btn-glow">
+                    <i class="fas fa-play"></i> RESUME RUN
+                </button>
+                
+                <button id="btn-pause-restart" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> RESTART RUN
+                </button>
+                
+                <button id="btn-exit" class="btn btn-secondary btn-red">
+                    <i class="fas fa-sign-out-alt"></i> EXIT TO MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="overlay">
+            <div class="neon-card menu-panel game-over-panel">
+                <h1 class="logo glitch-text red-neon">RUN CRASHED</h1>
+                
+                <div class="game-stats-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">FINAL SCORE</span>
+                        <span id="go-score" class="summary-value text-glow">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">COINS SURFED</span>
+                        <span id="go-coins" class="summary-value gold-text"><i class="fas fa-coins gold"></i> 0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">MYSTERY BOXES</span>
+                        <span id="go-boxes" class="summary-value pink-text"><i class="fas fa-box pink"></i> 0</span>
+                    </div>
+                    <div class="summary-item" id="go-new-highscore" style="display: none;">
+                        <span class="badge badge-new-high">NEW RECORD!</span>
+                    </div>
+                </div>
+
+                <!-- Chest Reveal Interface -->
+                <div id="chest-reveal-container" style="display: none; margin: 15px 0 25px 0;">
+                    <button id="btn-open-chest" class="btn btn-primary btn-glow btn-pink" style="width: 100%; max-width: none;">
+                        <i class="fas fa-box-open"></i> OPEN MYSTERY BOX (<span id="chest-count-btn">0</span>)
+                    </button>
+                    <div id="chest-prize-display" class="prize-display" style="display: none;">
+                        <span class="prize-title">REVEALED PRIZE:</span>
+                        <span id="chest-prize-value" class="prize-val yellow">100 COINS</span>
+                    </div>
+                </div>
+
+                <button id="btn-restart" class="btn btn-primary btn-glow btn-red">
+                    <i class="fas fa-redo"></i> RUN AGAIN
+                </button>
+                
+                <button id="btn-go-menu" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> MAIN MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- In-game Slide-in Mission Toast Notification -->
+        <div id="mission-toast" class="mission-toast">
+            <div class="toast-icon"><i class="fas fa-award"></i></div>
+            <div class="toast-content">
+                <span class="toast-title">CHALLENGE COMPLETED!</span>
+                <span id="toast-desc" class="toast-desc">Surf 1000m</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
